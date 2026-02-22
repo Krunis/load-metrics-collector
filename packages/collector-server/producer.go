@@ -4,14 +4,11 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/Krunis/load-metrics-collector/packages/common"
 )
 
-type SaramaProducer struct {
-	asyncProducer sarama.AsyncProducer
-	config       *sarama.Config
-}
 
-func NewSaramaProducer(brokerList []string) (*SaramaProducer, error) {
+func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error) {
 	config := sarama.NewConfig()
 
 	config.Producer.RequiredAcks = sarama.WaitForAll
@@ -42,11 +39,7 @@ func NewSaramaProducer(brokerList []string) (*SaramaProducer, error) {
 		return nil, err
 	}
 
-	return &SaramaProducer{
-		asyncProducer: producer,
-		config:       config}, nil
-}
-
-func connectToKafka() {
-	sarama.AsyncProducer.Input() 
+	return &common.SaramaAsyncProducer{
+		AsyncProducer: producer,
+		Config:       config}, nil
 }
