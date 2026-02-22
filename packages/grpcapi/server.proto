@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package grpcapi;
+
+option go_package = "github.com/Krunis/packages/grpcapi";
+
+import "google/protobuf/timestamp.proto";
+
+//
+service ServiceCollectorServer {
+    //
+    rpc SendMetric(stream MetricRequest) returns (stream MetricResponse);
+}
+
+
+message MetricRequest {
+    string service = 1;
+    string metric = 2;
+    string value = 3;
+    google.protobuf.Timestamp timestamp = 4;
+}
+
+message MetricResponse{
+    bool acknowledged = 1;
+}
