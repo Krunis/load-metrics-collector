@@ -20,11 +20,5 @@ type SaramaConsumer struct{
 	ConsumerGroup sarama.ConsumerGroup
 	Config *sarama.Config
 
-	consumerData ConsumerData
-}
-
-type ConsumerData struct{
-	Topics []string
-
 	Handler func(msg *sarama.ConsumerMessage) error
 }
