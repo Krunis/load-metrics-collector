@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 //
 service ServiceCollectorServer {
     //
-    rpc SendMetric(stream MetricRequest) returns (stream MetricResponse);
+    rpc SendMetric(stream MetricRequest) returns (MetricResponse);
 }
 
 

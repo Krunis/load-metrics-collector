@@ -145,10 +145,10 @@ const file_packages_grpcapi_server_proto_rawDesc = "" +
 	"\x05value\x18\x03 \x01(\tR\x05value\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"4\n" +
 	"\x0eMetricResponse\x12\"\n" +
-	"\facknowledged\x18\x01 \x01(\bR\facknowledged2[\n" +
-	"\x16ServiceCollectorServer\x12A\n" +
+	"\facknowledged\x18\x01 \x01(\bR\facknowledged2Y\n" +
+	"\x16ServiceCollectorServer\x12?\n" +
 	"\n" +
-	"SendMetric\x12\x16.grpcapi.MetricRequest\x1a\x17.grpcapi.MetricResponse(\x010\x01B$Z\"github.com/Krunis/packages/grpcapib\x06proto3"
+	"SendMetric\x12\x16.grpcapi.MetricRequest\x1a\x17.grpcapi.MetricResponse(\x01B$Z\"github.com/Krunis/packages/grpcapib\x06proto3"
 
 var (
 	file_packages_grpcapi_server_proto_rawDescOnce sync.Once

@@ -27,7 +27,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServiceCollectorServerClient interface {
 	//
-	SendMetric(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MetricRequest, MetricResponse], error)
+	SendMetric(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[MetricRequest, MetricResponse], error)
 }
 
 type serviceCollectorServerClient struct {
@@ -38,7 +38,7 @@ func NewServiceCollectorServerClient(cc grpc.ClientConnInterface) ServiceCollect
 	return &serviceCollectorServerClient{cc}
 }
 
-func (c *serviceCollectorServerClient) SendMetric(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MetricRequest, MetricResponse], error) {
+func (c *serviceCollectorServerClient) SendMetric(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[MetricRequest, MetricResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &ServiceCollectorServer_ServiceDesc.Streams[0], ServiceCollectorServer_SendMetric_FullMethodName, cOpts...)
 	if err != nil {
@@ -49,14 +49,14 @@ func (c *serviceCollectorServerClient) SendMetric(ctx context.Context, opts ...g
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ServiceCollectorServer_SendMetricClient = grpc.BidiStreamingClient[MetricRequest, MetricResponse]
+type ServiceCollectorServer_SendMetricClient = grpc.ClientStreamingClient[MetricRequest, MetricResponse]
 
 // ServiceCollectorServerServer is the server API for ServiceCollectorServer service.
 // All implementations must embed UnimplementedServiceCollectorServerServer
 // for forward compatibility.
 type ServiceCollectorServerServer interface {
 	//
-	SendMetric(grpc.BidiStreamingServer[MetricRequest, MetricResponse]) error
+	SendMetric(grpc.ClientStreamingServer[MetricRequest, MetricResponse]) error
 	mustEmbedUnimplementedServiceCollectorServerServer()
 }
 
@@ -67,7 +67,7 @@ type ServiceCollectorServerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedServiceCollectorServerServer struct{}
 
-func (UnimplementedServiceCollectorServerServer) SendMetric(grpc.BidiStreamingServer[MetricRequest, MetricResponse]) error {
+func (UnimplementedServiceCollectorServerServer) SendMetric(grpc.ClientStreamingServer[MetricRequest, MetricResponse]) error {
 	return status.Error(codes.Unimplemented, "method SendMetric not implemented")
 }
 func (UnimplementedServiceCollectorServerServer) mustEmbedUnimplementedServiceCollectorServerServer() {
@@ -97,7 +97,7 @@ func _ServiceCollectorServer_SendMetric_Handler(srv interface{}, stream grpc.Ser
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ServiceCollectorServer_SendMetricServer = grpc.BidiStreamingServer[MetricRequest, MetricResponse]
+type ServiceCollectorServer_SendMetricServer = grpc.ClientStreamingServer[MetricRequest, MetricResponse]
 
 // ServiceCollectorServer_ServiceDesc is the grpc.ServiceDesc for ServiceCollectorServer service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -110,7 +110,6 @@ var ServiceCollectorServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SendMetric",
 			Handler:       _ServiceCollectorServer_SendMetric_Handler,
-			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},
