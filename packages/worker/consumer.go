@@ -32,10 +32,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 		case msg, ok := <-claim.Messages():
 			if !ok {
 				if len(batch) > 0 {
-					err := w.processBatch(batch)
-					if err != nil {
-						return err
-					}
+					w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
 					for _, m := range batch {
 						session.MarkMessage(m, "")
@@ -47,10 +44,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 			batch = append(batch, msg)
 
 			if len(batch) >= batchSize {
-				err := w.processBatch(batch)
-				if err != nil {
-					return err
-				}
+				w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
 				for _, m := range batch {
 					session.MarkMessage(m, "")
@@ -62,10 +56,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 			}
 		case <-timer.C:
 			if len(batch) > 0 {
-				err := w.processBatch(batch)
-				if err != nil {
-					return err
-				}
+				w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
 				for _, m := range batch {
 					session.MarkMessage(m, "")
@@ -77,7 +68,6 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 			timer.Reset(maxWait)
 		case <-session.Context().Done():
 			return session.Context().Err()
-
 		}
 	}
 }
