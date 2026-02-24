@@ -2,13 +2,11 @@ package collectorserver
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net"
 	"sync"
 
-	"github.com/IBM/sarama"
 	"github.com/Krunis/load-metrics-collector/packages/common"
 	pb "github.com/Krunis/load-metrics-collector/packages/grpcapi"
 	"google.golang.org/grpc"
@@ -22,7 +20,7 @@ type CollectorServer struct {
 	grpcServer *grpc.Server
 
 	kafkaAddress   string
-	saramaProducer *common.SaramaAsyncProducer
+	saramaProducer common.Producer
 
 	metricCh chan *pb.MetricRequest
 
@@ -52,7 +50,8 @@ func (c *CollectorServer) Start() error {
 		return err
 	}
 
-	go c.fromChToKafka()
+    c.wg.Add(1)
+	go c.FromChToKafka()
 
 	c.lis, err = net.Listen("tcp", c.address)
 	if err != nil {
@@ -95,41 +94,3 @@ func (c *CollectorServer) SendMetric(stream grpc.ClientStreamingServer[pb.Metric
 	}
 }
 
-func (c *CollectorServer) fromChToKafka() {
-	var metric *pb.MetricRequest
-	var msg *sarama.ProducerMessage
-
-	c.wg.Add(1)
-	go func() {
-		for {
-			select {
-			case err := <-c.saramaProducer.AsyncProducer.Errors():
-				if err != nil {
-					log.Printf("Error while sending to Kafka: %s", err)
-				}
-			case <-c.lifecycle.Ctx.Done():
-				c.wg.Done()
-				return
-			}
-		}
-	}()
-
-	c.wg.Add(1)
-	for {
-		select {
-		case metric = <-c.metricCh:
-
-			msg = &sarama.ProducerMessage{
-				Topic:     fmt.Sprintf("%s-raw-metrics", metric.GetService()),
-				Key:       sarama.ByteEncoder([]byte(metric.GetMetric())),
-				Value:     sarama.ByteEncoder([]byte(metric.GetValue())),
-				Timestamp: metric.GetTimestamp().AsTime(),
-			}
-
-			c.saramaProducer.AsyncProducer.Input() <- msg
-		case <-c.lifecycle.Ctx.Done():
-			c.wg.Done()
-			return
-		}
-	}
-}

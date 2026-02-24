@@ -1,10 +1,12 @@
 package collectorserver
 
 import (
+	"log"
 	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/Krunis/load-metrics-collector/packages/common"
+	pb "github.com/Krunis/load-metrics-collector/packages/grpcapi"
 )
 
 
@@ -43,3 +45,36 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 		AsyncProducer: producer,
 		Config:       config}, nil
 }
+
+func (c *CollectorServer) FromChToKafka() {
+	var metric *pb.MetricRequest
+
+	defer c.wg.Done()
+
+	c.wg.Go(func() {
+		for {
+			select {
+			case err := <-c.saramaProducer.Errors():
+				if err != nil {
+					log.Printf("Error while sending to Kafka: %s", err)
+				}
+			case <-c.lifecycle.Ctx.Done():
+				return
+			}
+		}
+	})
+
+	for {
+		select {
+		case metric = <-c.metricCh:
+			c.saramaProducer.SendMsg(
+				"raw-metrics",
+				metric.GetService() + ":" + metric.GetMetric(),
+				metric.GetValue(), metric.GetTimestamp().AsTime(),
+			)
+		case <-c.lifecycle.Ctx.Done():
+			return
+		}
+	}
+}
+

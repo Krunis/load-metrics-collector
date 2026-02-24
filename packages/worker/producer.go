@@ -38,3 +38,4 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 		AsyncProducer: producer,
 		Config:       config}, nil
 }
+

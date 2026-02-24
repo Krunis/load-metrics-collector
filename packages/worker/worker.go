@@ -10,7 +10,7 @@ import (
 
 type Worker struct {
 	kafkaAddress   string
-	saramaProducer *common.SaramaAsyncProducer
+	saramaProducer common.Producer
 	saramaConsumer *common.SaramaConsumer
 
 	stopOnce sync.Once
