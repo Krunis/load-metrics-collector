@@ -9,16 +9,6 @@ import (
 	"github.com/Krunis/load-metrics-collector/packages/common"
 )
 
-type AggrKey string
-
-type Accumulator struct {
-	Count int
-	Sum   float64
-	Min   float64
-	Max   float64
-	P95   int
-}
-
 type Worker struct {
 	kafkaAddress   string
 	saramaProducer common.Producer
@@ -47,7 +37,7 @@ func NewWorker(kafkaAddress string) *Worker {
 func (w *Worker) Start(topics []string) error {
 	var err error
 
-	w.saramaConsumer, err = NewSaramaConsumer([]string{w.kafkaAddress}, "A", func(msg *sarama.ConsumerMessage) { return })
+	w.saramaConsumer, err = NewSaramaConsumer([]string{w.kafkaAddress}, "A")
 	if err != nil {
 		return err
 	}
@@ -82,7 +72,7 @@ func (w *Worker) pollingBatchCh() error{
 	for{
 		select {
 		case batch := <- w.BatchCh:
-			result, err := w.findP95(batch)
+			result, err := w.FindP95(batch)
 			if err != nil{
 				log.Printf("Error while p95 %s: %s", batch[0].Key, err)
 				return nil
@@ -97,6 +87,3 @@ func (w *Worker) pollingBatchCh() error{
 	}
 
 
-func (w *Worker) findP95([]*sarama.ConsumerMessage) (int, error){
-	return 0, nil
-}

@@ -2,6 +2,7 @@ package worker
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -41,6 +42,15 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 				return nil
 			}
 
+			//???
+			value, err := strconv.Atoi(string(msg.Value))
+			if err != nil{
+				log.Printf("Error while convert %v: %s", msg.Value, err)
+				return nil
+			}
+
+			w.AccMap[AggrKey(msg.Key)].Add(float64(value))
+
 			batch = append(batch, msg)
 
 			if len(batch) >= batchSize {
@@ -72,7 +82,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 	}
 }
 
-func NewSaramaConsumer(brokers []string, groupID string, handler func(msg *sarama.ConsumerMessage)) (*common.SaramaConsumer, error) {
+func NewSaramaConsumer(brokers []string, groupID string) (*common.SaramaConsumer, error) {
 	config := sarama.NewConfig()
 
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
