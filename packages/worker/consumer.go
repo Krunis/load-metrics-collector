@@ -42,11 +42,10 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 				return nil
 			}
 
-			//???
 			value, err := strconv.Atoi(string(msg.Value))
 			if err != nil{
 				log.Printf("Error while convert %v: %s", msg.Value, err)
-				return nil
+				continue
 			}
 
 			w.AccMap[AggrKey(msg.Key)].Add(float64(value))

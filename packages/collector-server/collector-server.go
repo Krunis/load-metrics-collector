@@ -50,8 +50,7 @@ func (c *CollectorServer) Start() error {
 		return err
 	}
 
-    c.wg.Add(1)
-	go c.FromChToKafka()
+	c.wg.Go(c.FromChToKafka)
 
 	c.lis, err = net.Listen("tcp", c.address)
 	if err != nil {

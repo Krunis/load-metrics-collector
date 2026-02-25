@@ -42,6 +42,8 @@ func (w *Worker) Start(topics []string) error {
 		return err
 	}
 
+	w.wg.Go(w.pollingBatchCh)
+
 	if err := w.startConsuming(topics); err != nil {
 		return err
 	}
@@ -66,23 +68,21 @@ func (w *Worker) startConsuming(topics []string) error {
 
 }
 
-func (w *Worker) pollingBatchCh() error{
-	defer w.wg.Done()
-
+func (w *Worker) pollingBatchCh(){
 	for{
 		select {
 		case batch := <- w.BatchCh:
 			result, err := w.FindP95(batch)
 			if err != nil{
 				log.Printf("Error while p95 %s: %s", batch[0].Key, err)
-				return nil
+				return
 			}
 
 			//mutex
 			w.AccMap[AggrKey(batch[0].Key)].P95 = result
 			
 		case <-w.lifecycle.Ctx.Done():
-			return nil
+			return
 		}}
 	}
 
