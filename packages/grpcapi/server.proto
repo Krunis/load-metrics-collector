@@ -16,8 +16,8 @@ service ServiceCollectorServer {
 message MetricRequest {
     string service = 1;
     string metric = 2;
-    string value = 3;
-    google.protobuf.Timestamp timestamp = 4;
+    float value = 3;
+    int64 timestamp = 4;
 }
 
 message MetricResponse{

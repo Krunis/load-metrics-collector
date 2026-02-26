@@ -1,6 +1,7 @@
 package collectorserver
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 
@@ -67,10 +68,17 @@ func (c *CollectorServer) FromChToKafka() {
 	for {
 		select {
 		case metric = <-c.metricCh:
+			valueJSON, _ := json.Marshal(common.MetricForAggr{
+				Service: metric.GetService(),
+				Metric: metric.GetMetric(),
+				Value: metric.GetValue(),
+				TimestampUnix: metric.GetTimestamp(),
+			})
+
 			c.saramaProducer.SendMsg(
 				"raw-metrics",
-				metric.GetService() + ":" + metric.GetMetric(),
-				metric.GetValue(), metric.GetTimestamp().AsTime(),
+				[]byte(metric.GetService() + ":" + metric.GetMetric()),
+				valueJSON,
 			)
 		case <-c.lifecycle.Ctx.Done():
 			return

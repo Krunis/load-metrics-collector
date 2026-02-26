@@ -2,7 +2,6 @@ package worker
 
 import (
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -41,14 +40,6 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 				}
 				return nil
 			}
-
-			value, err := strconv.Atoi(string(msg.Value))
-			if err != nil{
-				log.Printf("Error while convert %v: %s", msg.Value, err)
-				continue
-			}
-
-			w.AccMap[AggrKey(msg.Key)].Add(float64(value))
 
 			batch = append(batch, msg)
 

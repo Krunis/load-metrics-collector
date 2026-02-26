@@ -2,8 +2,6 @@ package common
 
 import (
 	"context"
-	"time"
-
 	"github.com/IBM/sarama"
 )
 
@@ -17,28 +15,33 @@ type SaramaAsyncProducer struct {
 	Config        *sarama.Config
 }
 
-type SaramaConsumer struct{
+type MetricForAggr struct {
+	Service, Metric string
+	Value float32
+	TimestampUnix          int64
+}
+
+type SaramaConsumer struct {
 	ConsumerGroup sarama.ConsumerGroup
-	Config *sarama.Config
+	Config        *sarama.Config
 
 	Handler func(msg *sarama.ConsumerMessage) error
 }
 
-func (ap *SaramaAsyncProducer) SendMsg(topic, key, value string, timestamp time.Time) {
+func (ap *SaramaAsyncProducer) SendMsg(topic string, key, value []byte) {
 	msg := &sarama.ProducerMessage{
-				Topic:     topic,
-				Key:       sarama.ByteEncoder([]byte(key)),
-				Value:     sarama.ByteEncoder([]byte(value)),
-				Timestamp: timestamp,
-			}
+		Topic: topic,
+		Key:   sarama.ByteEncoder(key),
+		Value: sarama.ByteEncoder(value),
+	}
 
-			ap.AsyncProducer.Input() <- msg
+	ap.AsyncProducer.Input() <- msg
 }
 
-func (ap *SaramaAsyncProducer) Errors() <-chan *sarama.ProducerError{
+func (ap *SaramaAsyncProducer) Errors() <-chan *sarama.ProducerError {
 	return ap.AsyncProducer.Errors()
 }
 
-func (ap *SaramaAsyncProducer) Close() error{
+func (ap *SaramaAsyncProducer) Close() error {
 	return ap.AsyncProducer.Close()
 }

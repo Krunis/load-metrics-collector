@@ -9,7 +9,7 @@ package grpcapi
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -26,8 +26,8 @@ type MetricRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Service       string                 `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
 	Metric        string                 `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
-	Value         string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
-	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Value         float32                `protobuf:"fixed32,3,opt,name=value,proto3" json:"value,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -76,18 +76,18 @@ func (x *MetricRequest) GetMetric() string {
 	return ""
 }
 
-func (x *MetricRequest) GetValue() string {
+func (x *MetricRequest) GetValue() float32 {
 	if x != nil {
 		return x.Value
 	}
-	return ""
+	return 0
 }
 
-func (x *MetricRequest) GetTimestamp() *timestamppb.Timestamp {
+func (x *MetricRequest) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
 	}
-	return nil
+	return 0
 }
 
 type MetricResponse struct {
@@ -138,12 +138,12 @@ var File_packages_grpcapi_server_proto protoreflect.FileDescriptor
 
 const file_packages_grpcapi_server_proto_rawDesc = "" +
 	"\n" +
-	"\x1dpackages/grpcapi/server.proto\x12\agrpcapi\x1a\x1fgoogle/protobuf/timestamp.proto\"\x91\x01\n" +
+	"\x1dpackages/grpcapi/server.proto\x12\agrpcapi\x1a\x1fgoogle/protobuf/timestamp.proto\"u\n" +
 	"\rMetricRequest\x12\x18\n" +
 	"\aservice\x18\x01 \x01(\tR\aservice\x12\x16\n" +
 	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\x128\n" +
-	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"4\n" +
+	"\x05value\x18\x03 \x01(\x02R\x05value\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"4\n" +
 	"\x0eMetricResponse\x12\"\n" +
 	"\facknowledged\x18\x01 \x01(\bR\facknowledged2Y\n" +
 	"\x16ServiceCollectorServer\x12?\n" +
@@ -164,19 +164,17 @@ func file_packages_grpcapi_server_proto_rawDescGZIP() []byte {
 
 var file_packages_grpcapi_server_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_packages_grpcapi_server_proto_goTypes = []any{
-	(*MetricRequest)(nil),         // 0: grpcapi.MetricRequest
-	(*MetricResponse)(nil),        // 1: grpcapi.MetricResponse
-	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
+	(*MetricRequest)(nil),  // 0: grpcapi.MetricRequest
+	(*MetricResponse)(nil), // 1: grpcapi.MetricResponse
 }
 var file_packages_grpcapi_server_proto_depIdxs = []int32{
-	2, // 0: grpcapi.MetricRequest.timestamp:type_name -> google.protobuf.Timestamp
-	0, // 1: grpcapi.ServiceCollectorServer.SendMetric:input_type -> grpcapi.MetricRequest
-	1, // 2: grpcapi.ServiceCollectorServer.SendMetric:output_type -> grpcapi.MetricResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: grpcapi.ServiceCollectorServer.SendMetric:input_type -> grpcapi.MetricRequest
+	1, // 1: grpcapi.ServiceCollectorServer.SendMetric:output_type -> grpcapi.MetricResponse
+	1, // [1:2] is the sub-list for method output_type
+	0, // [0:1] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_packages_grpcapi_server_proto_init() }
