@@ -5,7 +5,7 @@ import (
 )
 
 type Producer interface {
-	SendMsg(string, []byte, []byte)
+	SendMsg(topic string, key, value []byte)
 	Errors() <-chan *sarama.ProducerError
 	Close() error
 }

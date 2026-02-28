@@ -1,6 +1,9 @@
 package worker
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -36,6 +39,51 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 
 	return &common.SaramaAsyncProducer{
 		AsyncProducer: producer,
-		Config:       config}, nil
+		Config:        config}, nil
 }
 
+func (w *Worker) FromChToKafka() {
+	defer w.wg.Done()
+
+	w.wg.Go(func() {
+		for {
+			select {
+			case err := <-w.saramaProducer.Errors():
+				if err != nil {
+					log.Printf("Error while sending to Kafka: %s", err)
+				}
+			case <-w.lifecycle.Ctx.Done():
+				return
+			}
+		}
+	})
+
+	for {
+		select {
+		case snapshot := <-w.SnapshotCh:
+			for key, value := range snapshot {
+
+				aggrMetric := &AggregatedMetric{
+					Service: key.Service,
+					Metric: key.Metric,
+					Bucket: key.Bucket,
+					Count: value.Count,
+					Min: value.Min,
+					Max: value.Max,
+					Avg: value.Sum / float32(value.Count),
+					P95: value.P95,
+				}
+
+				metricJSON, _ := json.Marshal(aggrMetric)
+
+				w.saramaProducer.SendMsg(
+					"aggregated-metrics",
+					[]byte(fmt.Sprintf("%s:%s:%s", aggrMetric.Service, aggrMetric.Metric, aggrMetric.Bucket)),
+					metricJSON,
+				)
+			}
+		case <-w.lifecycle.Ctx.Done():
+
+		}
+	}
+}
