@@ -93,3 +93,24 @@ func (c *CollectorServer) SendMetric(stream grpc.ClientStreamingServer[pb.Metric
 	}
 }
 
+func (c *CollectorServer) Stop() error {
+	c.lifecycle.Cancel()
+
+	c.wg.Wait()
+
+	if c.lis != nil {
+		c.lis.Close()
+	}
+
+	if c.grpcServer != nil {
+		c.grpcServer.Stop()
+	}
+
+	if c.saramaProducer.Close() != nil {
+		if err := c.saramaProducer.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

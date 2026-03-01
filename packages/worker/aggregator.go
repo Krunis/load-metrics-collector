@@ -2,6 +2,8 @@ package worker
 
 import (
 	"encoding/json"
+	"math"
+	"sort"
 
 	"github.com/IBM/sarama"
 	"github.com/Krunis/load-metrics-collector/packages/common"
@@ -50,6 +52,7 @@ func (w *Worker) AggregateBatch(batch []*sarama.ConsumerMessage) {
 		}
 
 		w.AccMapMutex.Lock()
+		w.AccMap[key] = &Accumulator{}
 		w.AccMap[key].Add(m.Value)
 		w.AccMapMutex.Unlock()
 	}
@@ -73,3 +76,13 @@ func (a *Accumulator) Add(value float32) {
 	a.Values = append(a.Values, value)
 }
 
+func (a *Accumulator) findP95() {
+	vals := a.Values
+
+	sort.Slice(vals, func(i, j int) bool {
+		return vals[i] < vals[j]
+	})
+	idx := int(math.Ceil(0.95 * float64(len(vals)))) - 1
+
+	a.P95 = vals[idx]
+}

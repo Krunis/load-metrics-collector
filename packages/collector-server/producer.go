@@ -10,7 +10,6 @@ import (
 	pb "github.com/Krunis/load-metrics-collector/packages/grpcapi"
 )
 
-
 func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error) {
 	config := sarama.NewConfig()
 
@@ -44,7 +43,7 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 
 	return &common.SaramaAsyncProducer{
 		AsyncProducer: producer,
-		Config:       config}, nil
+		Config:        config}, nil
 }
 
 func (c *CollectorServer) FromChToKafka() {
@@ -69,20 +68,26 @@ func (c *CollectorServer) FromChToKafka() {
 		select {
 		case metric = <-c.metricCh:
 			valueJSON, _ := json.Marshal(common.MetricForAggr{
-				Service: metric.GetService(),
-				Metric: metric.GetMetric(),
-				Value: metric.GetValue(),
+				Service:       metric.GetService(),
+				Metric:        metric.GetMetric(),
+				Value:         metric.GetValue(),
 				TimestampUnix: metric.GetTimestamp(),
 			})
 
 			c.saramaProducer.SendMsg(
 				"raw-metrics",
-				[]byte(metric.GetService() + ":" + metric.GetMetric()),
+				[]byte(metric.GetService()+":"+metric.GetMetric()),
 				valueJSON,
 			)
+
+			log.Printf("Sent in Kafka:\nkey: %s\nvalue: %v", metric.GetService()+":"+metric.GetMetric(), common.MetricForAggr{
+				Service:       metric.GetService(),
+				Metric:        metric.GetMetric(),
+				Value:         metric.GetValue(),
+				TimestampUnix: metric.GetTimestamp(),
+			})
 		case <-c.lifecycle.Ctx.Done():
 			return
 		}
 	}
 }
-

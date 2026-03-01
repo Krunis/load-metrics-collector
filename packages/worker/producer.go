@@ -50,7 +50,7 @@ func (w *Worker) FromChToKafka() {
 			select {
 			case err := <-w.saramaProducer.Errors():
 				if err != nil {
-					log.Printf("Error while sending to Kafka: %s", err)
+					log.Printf("Error while produce to Kafka: %s", err)
 				}
 			case <-w.lifecycle.Ctx.Done():
 				return
@@ -78,12 +78,12 @@ func (w *Worker) FromChToKafka() {
 
 				w.saramaProducer.SendMsg(
 					"aggregated-metrics",
-					[]byte(fmt.Sprintf("%s:%s:%s", aggrMetric.Service, aggrMetric.Metric, aggrMetric.Bucket)),
+					[]byte(fmt.Sprintf("%s:%s:%d", aggrMetric.Service, aggrMetric.Metric, aggrMetric.Bucket)),
 					metricJSON,
 				)
 			}
 		case <-w.lifecycle.Ctx.Done():
-
+			return
 		}
 	}
 }

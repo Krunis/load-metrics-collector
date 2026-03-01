@@ -2,9 +2,9 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"math"
-	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,14 +36,20 @@ func NewWorker(kafkaAddress string) *Worker {
 
 	return &Worker{
 		kafkaAddress: kafkaAddress,
-		BatchCh: make(chan []*sarama.ConsumerMessage, 100),
-		SnapshotCh: make(chan map[AggrKey]*Accumulator, 20),
+		AccMap: map[AggrKey]*Accumulator{},
+		BatchCh:      make(chan []*sarama.ConsumerMessage, 100),
+		SnapshotCh:   make(chan map[AggrKey]*Accumulator, 20),
 		lifecycle:    common.Lifecycle{Ctx: ctx, Cancel: cancel},
 	}
 }
 
 func (w *Worker) Start(topics []string) error {
 	var err error
+
+	w.saramaProducer, err = NewSaramaProducer([]string{w.kafkaAddress})
+	if err != nil {
+		return err
+	}
 
 	w.saramaConsumer, err = NewSaramaConsumer([]string{w.kafkaAddress}, "A")
 	if err != nil {
@@ -57,7 +63,7 @@ func (w *Worker) Start(topics []string) error {
 	w.wg.Go(w.aggrCycle)
 
 	if err := w.startConsuming(topics); err != nil {
-		return err
+		log.Printf("Error while consuming from Kafka: %s", err)
 	}
 
 	return nil
@@ -110,7 +116,7 @@ func (w *Worker) flushCycle() {
 		snapshot := make(map[AggrKey]*Accumulator)
 
 		for key, value := range w.AccMap {
-			if key.Bucket < now{
+			if key.Bucket < now {
 				snapshot[key] = value
 				snapshot[key].findP95()
 				delete(w.AccMap, key)
@@ -127,13 +133,24 @@ func (w *Worker) flushCycle() {
 	}
 }
 
-func (a *Accumulator) findP95() {
-	vals := a.Values
+func (w *Worker) Stop() error {
+	w.lifecycle.Cancel()
 
-	sort.Slice(vals, func(i, j int) bool {
-		return vals[i] < vals[j]
-	})
-	idx := int(math.Ceil(0.95 * float64(len(vals)))) - 1
+	w.wg.Wait()
 
-	a.P95 = vals[idx]
+	errs := []string{}
+
+	if w.saramaConsumer.ConsumerGroup != nil {
+		if err := w.saramaConsumer.ConsumerGroup.Close(); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+
+	if w.saramaProducer != nil {
+		if err := w.saramaProducer.Close(); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+
+	return fmt.Errorf("%s", strings.Join(errs, " "))
 }

@@ -41,7 +41,6 @@ services:
       - ./data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  
   protobuf_gen:
     build:
       context: .
@@ -53,3 +52,17 @@ services:
       - ./packages/grpcapi//buf.gen.yaml:/app/buf.gen.yaml
     command: [ "generate" ]
     profiles: [ "tools" ]
+  collector:
+    build:
+      context: .
+      dockerfile: collector-server-dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka
+  worker:
+    build:
+      context: .
+      dockerfile: worker-dockerfile
+    depends_on:
+      - kafka
