@@ -89,7 +89,11 @@ func (c *CollectorServer) SendMetric(stream grpc.ClientStreamingServer[pb.Metric
 			}
 		}
 
+		log.Printf("Received message: %s %s %v %d", msg.GetMetric(), msg.GetService(), msg.GetValue(), msg.GetTimestamp())
+
 		c.metricCh <- msg
+
+		
 	}
 }
 
@@ -106,7 +110,7 @@ func (c *CollectorServer) Stop() error {
 		c.grpcServer.Stop()
 	}
 
-	if c.saramaProducer.Close() != nil {
+	if c.saramaProducer != nil {
 		if err := c.saramaProducer.Close(); err != nil {
 			return err
 		}

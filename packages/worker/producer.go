@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -81,9 +82,12 @@ func (w *Worker) FromChToKafka() {
 					[]byte(fmt.Sprintf("%s:%s:%d", aggrMetric.Service, aggrMetric.Metric, aggrMetric.Bucket)),
 					metricJSON,
 				)
+				
+				log.Printf("Sent in Kafka:\nkey: %s\nvalue: %v", aggrMetric.Service+":"+aggrMetric.Metric+":"+strconv.Itoa(int(aggrMetric.Bucket)), *aggrMetric)
 			}
-		case <-w.lifecycle.Ctx.Done():
-			return
+			case <-w.lifecycle.Ctx.Done():
+				return
 		}
 	}
+	
 }

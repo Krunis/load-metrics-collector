@@ -36,7 +36,7 @@ func NewWorker(kafkaAddress string) *Worker {
 
 	return &Worker{
 		kafkaAddress: kafkaAddress,
-		AccMap: map[AggrKey]*Accumulator{},
+		AccMap:       map[AggrKey]*Accumulator{},
 		BatchCh:      make(chan []*sarama.ConsumerMessage, 100),
 		SnapshotCh:   make(chan map[AggrKey]*Accumulator, 20),
 		lifecycle:    common.Lifecycle{Ctx: ctx, Cancel: cancel},
@@ -108,28 +108,33 @@ func (w *Worker) flushCycle() {
 	timer := time.NewTimer(time.Second * 1)
 	defer timer.Stop()
 
-	select {
-	case <-timer.C:
-		now := time.Now().Unix()
+	for {
+		select {
+		case <-timer.C:
+			now := time.Now().Unix()
 
-		w.AccMapMutex.Lock()
-		snapshot := make(map[AggrKey]*Accumulator)
+			w.AccMapMutex.Lock()
+			snapshot := make(map[AggrKey]*Accumulator)
 
-		for key, value := range w.AccMap {
-			if key.Bucket < now {
-				snapshot[key] = value
-				snapshot[key].findP95()
-				delete(w.AccMap, key)
+			for key, value := range w.AccMap {
+				if key.Bucket < now {
+					snapshot[key] = value
+					snapshot[key].findP95()
+					delete(w.AccMap, key)
+				}
 			}
+
+			w.AccMapMutex.Unlock()
+
+			if len(snapshot) > 0 {
+				w.SnapshotCh <- snapshot
+				log.Printf("Sent in SnapshotCh: %v", snapshot)
+			}
+
+			timer.Reset(time.Second * 1)
+		case <-w.lifecycle.Ctx.Done():
+			return
 		}
-
-		w.AccMapMutex.Unlock()
-
-		w.SnapshotCh <- snapshot
-
-		timer.Reset(time.Second * 1)
-	case <-w.lifecycle.Ctx.Done():
-		return
 	}
 }
 

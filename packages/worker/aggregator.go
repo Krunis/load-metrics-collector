@@ -2,6 +2,7 @@ package worker
 
 import (
 	"encoding/json"
+	"log"
 	"math"
 	"sort"
 
@@ -54,6 +55,7 @@ func (w *Worker) AggregateBatch(batch []*sarama.ConsumerMessage) {
 		w.AccMapMutex.Lock()
 		w.AccMap[key] = &Accumulator{}
 		w.AccMap[key].Add(m.Value)
+		log.Printf("Aggregated: %v", m.Value)
 		w.AccMapMutex.Unlock()
 	}
 }

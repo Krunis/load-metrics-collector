@@ -34,6 +34,8 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 				if len(batch) > 0 {
 					w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
+					log.Println("Batch sent in batchCh")
+
 					for _, m := range batch {
 						session.MarkMessage(m, "")
 					}
@@ -57,6 +59,8 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 		case <-timer.C:
 			if len(batch) > 0 {
 				w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
+
+				log.Println("Batch sent in batchCh")
 
 				for _, m := range batch {
 					session.MarkMessage(m, "")

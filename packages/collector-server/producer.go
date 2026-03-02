@@ -29,7 +29,7 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 
 	config.Producer.Flush.Bytes = 100000 // 100 KB
 	config.Producer.Flush.Messages = 1000
-	config.Producer.Flush.Frequency = 50 * time.Millisecond
+	config.Producer.Flush.Frequency = 100 * time.Millisecond
 
 	config.Producer.Timeout = 30 * time.Second
 	config.Net.DialTimeout = 30 * time.Second
