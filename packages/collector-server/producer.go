@@ -20,7 +20,7 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 	config.Producer.Retry.Max = 10
 	config.Producer.Retry.Backoff = 100 * time.Millisecond
 
-	config.Producer.Return.Successes = true
+	config.Producer.Return.Successes = false
 	config.Producer.Return.Errors = true
 
 	config.Producer.Partitioner = sarama.NewHashPartitioner
@@ -29,7 +29,7 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 
 	config.Producer.Flush.Bytes = 100000 // 100 KB
 	config.Producer.Flush.Messages = 1000
-	config.Producer.Flush.Frequency = 100 * time.Millisecond
+	config.Producer.Flush.Frequency = 50 * time.Millisecond
 
 	config.Producer.Timeout = 30 * time.Second
 	config.Net.DialTimeout = 30 * time.Second
@@ -49,6 +49,8 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 func (c *CollectorServer) FromChToKafka() {
 	var metric *pb.MetricRequest
 
+	defer log.Println("FromChToKafka stopped")
+
 	defer c.wg.Done()
 
 	c.wg.Go(func() {
@@ -65,6 +67,7 @@ func (c *CollectorServer) FromChToKafka() {
 	})
 
 	for {
+		log.Println("begin FromChToKafka")
 		select {
 		case metric = <-c.metricCh:
 			valueJSON, _ := json.Marshal(common.MetricForAggr{
@@ -80,12 +83,12 @@ func (c *CollectorServer) FromChToKafka() {
 				valueJSON,
 			)
 
-			log.Printf("Sent in Kafka:\nkey: %s\nvalue: %v", metric.GetService()+":"+metric.GetMetric(), common.MetricForAggr{
-				Service:       metric.GetService(),
-				Metric:        metric.GetMetric(),
-				Value:         metric.GetValue(),
-				TimestampUnix: metric.GetTimestamp(),
-			})
+			// log.Printf("Sent in Kafka:\nkey: %s\nvalue: %v", metric.GetService()+":"+metric.GetMetric(), common.MetricForAggr{
+			// 	Service:       metric.GetService(),
+			// 	Metric:        metric.GetMetric(),
+			// 	Value:         metric.GetValue(),
+			// 	TimestampUnix: metric.GetTimestamp(),
+			// })
 		case <-c.lifecycle.Ctx.Done():
 			return
 		}

@@ -2,6 +2,8 @@ package common
 
 import (
 	"context"
+	"log"
+	"time"
 
 	"github.com/IBM/sarama"
 )
@@ -36,8 +38,13 @@ func (ap *SaramaAsyncProducer) SendMsg(topic string, key, value []byte) {
 		Value: sarama.ByteEncoder(value),
 	}
 
-	ap.AsyncProducer.Input() <- msg
-}
+	select {
+        case ap.AsyncProducer.Input() <- msg:
+            // OK
+        case <-time.After(50 * time.Millisecond):
+            log.Printf("⚠️ Таймаут отправки в Sarama, сообщение потеряно")
+        }
+    }
 
 func (ap *SaramaAsyncProducer) Errors() <-chan *sarama.ProducerError {
 	return ap.AsyncProducer.Errors()

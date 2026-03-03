@@ -37,7 +37,7 @@ func NewCollectorServer(port, kafkaAddress string) *CollectorServer {
 	return &CollectorServer{
 		address:      port,
 		kafkaAddress: kafkaAddress,
-		metricCh:     make(chan *pb.MetricRequest, 1000),
+		metricCh:     make(chan *pb.MetricRequest, 10000),
 		lifecycle:    common.Lifecycle{Ctx: ctx, Cancel: cancel},
 	}
 }
@@ -87,12 +87,16 @@ func (c *CollectorServer) SendMetric(stream grpc.ClientStreamingServer[pb.Metric
 			if err == io.EOF {
 				return stream.SendAndClose(&pb.MetricResponse{Acknowledged: true})
 			}
+			
+			log.Printf("Ошибка получения сообщения: %v", err)
+            return err
 		}
 
 		log.Printf("Received message: %s %s %v %d", msg.GetMetric(), msg.GetService(), msg.GetValue(), msg.GetTimestamp())
 
 		c.metricCh <- msg
 
+		log.Printf("Длина канала: %v", len(c.metricCh))
 		
 	}
 }

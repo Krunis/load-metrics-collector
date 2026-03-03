@@ -29,6 +29,9 @@ const client = new Client();
 client.load(['/scripts'], 'server.proto');
 
 export default function () {
+    const vuId = __VU;
+    const startTime = Date.now();
+    
     client.connect('host.docker.internal:8082', { plaintext: true });
     
     const stream = new Stream(client, 'grpcapi.ServiceCollectorServer/SendMetric');
@@ -36,20 +39,20 @@ export default function () {
     let finalResponse = null;
     
     stream.on('data', (response) => {
-        console.log(`✅ Получен финальный ответ`);
+        console.log(`✅ VU ${vuId} получил ответ`);
         finalResponse = response;
     });
     
     stream.on('error', (error) => {
-        console.error(`❌ Ошибка: ${error.message}`);
+        console.error(`❌ VU ${vuId} ошибка: ${error.message}`);
     });
     
-    // Каждый VU отправляет 111 сообщений (111 * 9 = 999 сообщений на VU)
-    // При 10 VU = 9990 сообщений (почти 10000)
+    // 111 сообщений на VU = 999 сообщений на VU (111 * 9)
     const messagesPerVU = 111;
+    let sentCount = 0;
     
     for (let j = 0; j < messagesPerVU; j++) {
-        const baseTime = Date.now() + (j * 100); // Разносим по времени
+        const batchStart = Date.now();
         
         for (let i = 0; i < combinations.length; i++) {
             const combo = combinations[i];
@@ -59,25 +62,30 @@ export default function () {
                 service: combo.service,
                 metric: combo.metric,
                 value: parseFloat(value),
-                timestamp: baseTime + i
+                timestamp: batchStart + i // микро-сдвиг для уникальности
             };
             
             stream.write(message);
+            sentCount++;
+        }
+        
+        // Контролируем скорость, чтобы уложиться в 1 секунду
+        const elapsed = Date.now() - startTime;
+        if (elapsed > 950) { // Если почти вышли за секунду
+            break;
         }
     }
     
-    console.log(`📤 VU отправил ${messagesPerVU * combinations.length} сообщений`);
+    console.log(`📤 VU ${vuId} отправил ${sentCount} сообщений за ${Date.now() - startTime}ms`);
     
-    // Закрываем стрим - после этого сервер пришлет ответ
     stream.end();
     
     // Ждем ответ
     let waited = 0;
     while (!finalResponse && waited < 50) {
-        sleep(0.1);
+        sleep(0.01); // 10ms
         waited++;
     }
     
     client.close();
-    sleep(0.1);
 }

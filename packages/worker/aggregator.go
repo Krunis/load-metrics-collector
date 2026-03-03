@@ -44,18 +44,22 @@ func (w *Worker) AggregateBatch(batch []*sarama.ConsumerMessage) {
 
 		json.Unmarshal(metric.Value, &m)
 
-		bucket := m.TimestampUnix / 1000
-
 		key := AggrKey{
 			Service: m.Service,
 			Metric:  m.Metric,
-			Bucket:  bucket,
+			Bucket:  m.TimestampUnix / 1000,
 		}
 
 		w.AccMapMutex.Lock()
-		w.AccMap[key] = &Accumulator{}
+
+		if _, exists := w.AccMap[key]; !exists{
+			w.AccMap[key] = &Accumulator{}
+		}
+
 		w.AccMap[key].Add(m.Value)
+
 		log.Printf("Aggregated: %v", m.Value)
+
 		w.AccMapMutex.Unlock()
 	}
 }

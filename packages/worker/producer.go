@@ -46,6 +46,8 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 func (w *Worker) FromChToKafka() {
 	defer w.wg.Done()
 
+	defer log.Println("FromChToKafka stopped")
+
 	w.wg.Go(func() {
 		for {
 			select {

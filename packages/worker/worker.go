@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -89,6 +90,8 @@ func (w *Worker) startConsuming(topics []string) error {
 func (w *Worker) aggrCycle() {
 	defer w.wg.Done()
 
+	defer log.Println("aggrCycle stopped")
+
 	for {
 		select {
 		case batch := <-w.BatchCh:
@@ -105,6 +108,8 @@ func (w *Worker) aggrCycle() {
 func (w *Worker) flushCycle() {
 	defer w.wg.Done()
 
+	defer log.Println("flushCycle stopped")
+
 	timer := time.NewTimer(time.Second * 1)
 	defer timer.Stop()
 
@@ -117,6 +122,9 @@ func (w *Worker) flushCycle() {
 			snapshot := make(map[AggrKey]*Accumulator)
 
 			for key, value := range w.AccMap {
+
+				log.Printf(strconv.Itoa(int(key.Bucket)), strconv.Itoa(int(now)))
+				
 				if key.Bucket < now {
 					snapshot[key] = value
 					snapshot[key].findP95()
