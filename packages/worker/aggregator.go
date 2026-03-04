@@ -15,7 +15,6 @@ type AggregatedMetric struct {
 	Metric  string  `json:"metric"`
 	Bucket  int64   `json:"bucket"` // unix seconds
 	Count   int     `json:"count"`
-	Sum     float32 `json:"sum"`
 	Min     float32 `json:"min"`
 	Max     float32 `json:"max"`
 	Avg     float32 `json:"avg"`
@@ -58,7 +57,7 @@ func (w *Worker) AggregateBatch(batch []*sarama.ConsumerMessage) {
 
 		w.AccMap[key].Add(m.Value)
 
-		log.Printf("Aggregated: %v", m.Value)
+		log.Printf("Aggregated: %v", key)
 
 		w.AccMapMutex.Unlock()
 	}

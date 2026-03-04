@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -57,13 +56,13 @@ func (w *Worker) Start(topics []string) error {
 		return err
 	}
 
-	w.wg.Go(w.FromChToKafka)
+	w.wg.Go(w.fromChToKafka) //kafka<- <-SnapshotCh
 
-	w.wg.Go(w.flushCycle)
+	w.wg.Go(w.flushCycle) //SnapshotCh <-AccMap
 
-	w.wg.Go(w.aggrCycle)
+	w.wg.Go(w.aggrCycle) //AccMap <-BatchCh
 
-	if err := w.startConsuming(topics); err != nil {
+	if err := w.startConsuming(topics); err != nil { // BatchCh<- <-kafka
 		log.Printf("Error while consuming from Kafka: %s", err)
 	}
 
@@ -95,10 +94,9 @@ func (w *Worker) aggrCycle() {
 	for {
 		select {
 		case batch := <-w.BatchCh:
+			log.Printf("From BatchCh: %v/100", len(w.BatchCh))
 
-			//mutex
 			w.AggregateBatch(batch)
-
 		case <-w.lifecycle.Ctx.Done():
 			return
 		}
@@ -122,9 +120,6 @@ func (w *Worker) flushCycle() {
 			snapshot := make(map[AggrKey]*Accumulator)
 
 			for key, value := range w.AccMap {
-
-				log.Printf(strconv.Itoa(int(key.Bucket)), strconv.Itoa(int(now)))
-				
 				if key.Bucket < now {
 					snapshot[key] = value
 					snapshot[key].findP95()
@@ -136,7 +131,8 @@ func (w *Worker) flushCycle() {
 
 			if len(snapshot) > 0 {
 				w.SnapshotCh <- snapshot
-				log.Printf("Sent in SnapshotCh: %v", snapshot)
+
+				log.Printf("In SnapshotCh: %v/20", len(w.SnapshotCh))
 			}
 
 			timer.Reset(time.Second * 1)

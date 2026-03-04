@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/Krunis/load-metrics-collector/packages/common"
 	pb "github.com/Krunis/load-metrics-collector/packages/grpcapi"
@@ -37,7 +38,7 @@ func NewCollectorServer(port, kafkaAddress string) *CollectorServer {
 	return &CollectorServer{
 		address:      port,
 		kafkaAddress: kafkaAddress,
-		metricCh:     make(chan *pb.MetricRequest, 10000),
+		metricCh:     make(chan *pb.MetricRequest, 30000),
 		lifecycle:    common.Lifecycle{Ctx: ctx, Cancel: cancel},
 	}
 }
@@ -81,6 +82,8 @@ func (c *CollectorServer) Run() error {
 }
 
 func (c *CollectorServer) SendMetric(stream grpc.ClientStreamingServer[pb.MetricRequest, pb.MetricResponse]) error {
+	log.Println(time.Now().UnixMilli())
+
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
@@ -96,7 +99,7 @@ func (c *CollectorServer) SendMetric(stream grpc.ClientStreamingServer[pb.Metric
 
 		c.metricCh <- msg
 
-		log.Printf("Длина канала: %v", len(c.metricCh))
+		log.Printf("В канал: %v/10000", len(c.metricCh))
 		
 	}
 }

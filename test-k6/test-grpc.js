@@ -5,8 +5,8 @@ export const options = {
     scenarios: {
         client_stream_test: {
             executor: 'constant-vus',
-            vus: 10,
-            duration: '1s',
+            vus: 50,              // 50 виртуальных пользователей
+            duration: '1s',        // 1 секунда
         },
     },
 };
@@ -30,7 +30,6 @@ client.load(['/scripts'], 'server.proto');
 
 export default function () {
     const vuId = __VU;
-    const startTime = Date.now();
     
     client.connect('host.docker.internal:8082', { plaintext: true });
     
@@ -39,7 +38,6 @@ export default function () {
     let finalResponse = null;
     
     stream.on('data', (response) => {
-        console.log(`✅ VU ${vuId} получил ответ`);
         finalResponse = response;
     });
     
@@ -47,10 +45,12 @@ export default function () {
         console.error(`❌ VU ${vuId} ошибка: ${error.message}`);
     });
     
-    // 111 сообщений на VU = 999 сообщений на VU (111 * 9)
-    const messagesPerVU = 111;
+    // Каждый VU отправляет ~111 сообщений * 9 комбинаций = 999 сообщений на VU
+    // 50 VU * 1000 = 50 000 сообщений
+    const messagesPerVU = 112; // 112 * 9 = 1008 сообщений на VU (чуть с запасом)
     let sentCount = 0;
     
+    // Отправляем все сообщения максимально быстро
     for (let j = 0; j < messagesPerVU; j++) {
         const batchStart = Date.now();
         
@@ -62,28 +62,22 @@ export default function () {
                 service: combo.service,
                 metric: combo.metric,
                 value: parseFloat(value),
-                timestamp: batchStart + i // микро-сдвиг для уникальности
+                timestamp: batchStart + i
             };
             
             stream.write(message);
             sentCount++;
         }
-        
-        // Контролируем скорость, чтобы уложиться в 1 секунду
-        const elapsed = Date.now() - startTime;
-        if (elapsed > 950) { // Если почти вышли за секунду
-            break;
-        }
     }
     
-    console.log(`📤 VU ${vuId} отправил ${sentCount} сообщений за ${Date.now() - startTime}ms`);
+    console.log(`📤 VU ${vuId} отправил ${sentCount} сообщений`);
     
     stream.end();
     
     // Ждем ответ
     let waited = 0;
     while (!finalResponse && waited < 50) {
-        sleep(0.01); // 10ms
+        sleep(0.01);
         waited++;
     }
     

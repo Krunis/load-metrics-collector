@@ -43,7 +43,7 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 		Config:        config}, nil
 }
 
-func (w *Worker) FromChToKafka() {
+func (w *Worker) fromChToKafka() {
 	defer w.wg.Done()
 
 	defer log.Println("FromChToKafka stopped")
@@ -64,6 +64,8 @@ func (w *Worker) FromChToKafka() {
 	for {
 		select {
 		case snapshot := <-w.SnapshotCh:
+			log.Printf("From SnapshotCh: %v/20", len(w.SnapshotCh))
+
 			for key, value := range snapshot {
 
 				aggrMetric := &AggregatedMetric{
@@ -85,6 +87,8 @@ func (w *Worker) FromChToKafka() {
 					metricJSON,
 				)
 				
+				log.Println(time.Now().UnixMilli())
+
 				log.Printf("Sent in Kafka:\nkey: %s\nvalue: %v", aggrMetric.Service+":"+aggrMetric.Metric+":"+strconv.Itoa(int(aggrMetric.Bucket)), *aggrMetric)
 			}
 			case <-w.lifecycle.Ctx.Done():

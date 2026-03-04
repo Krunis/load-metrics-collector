@@ -2,11 +2,12 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS aggregated_metrics(
     id PRIMARY KEY DEFAULT uuid_generate_v4(),
-    service_title TEXT,
+    service_name TEXT,
     metric_name TEXT,
-    bucket TIMESTAMPTZ,
-    count INT,
-    avg INT,
-    p95 INT,
-    max INT
+    bucket BIGINT,
+    count INT, 
+    min REAL,
+    max REAL,
+    avg REAL,
+    p95 REAL
 )

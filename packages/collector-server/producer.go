@@ -29,7 +29,7 @@ func NewSaramaProducer(brokerList []string) (*common.SaramaAsyncProducer, error)
 
 	config.Producer.Flush.Bytes = 100000 // 100 KB
 	config.Producer.Flush.Messages = 1000
-	config.Producer.Flush.Frequency = 50 * time.Millisecond
+	config.Producer.Flush.Frequency = 20 * time.Millisecond
 
 	config.Producer.Timeout = 30 * time.Second
 	config.Net.DialTimeout = 30 * time.Second
@@ -67,9 +67,10 @@ func (c *CollectorServer) FromChToKafka() {
 	})
 
 	for {
-		log.Println("begin FromChToKafka")
 		select {
 		case metric = <-c.metricCh:
+			log.Printf("Из канала %v/10000", len(c.metricCh))
+
 			valueJSON, _ := json.Marshal(common.MetricForAggr{
 				Service:       metric.GetService(),
 				Metric:        metric.GetMetric(),
@@ -82,6 +83,8 @@ func (c *CollectorServer) FromChToKafka() {
 				[]byte(metric.GetService()+":"+metric.GetMetric()),
 				valueJSON,
 			)
+
+			log.Println(time.Now().UnixMilli())
 
 			// log.Printf("Sent in Kafka:\nkey: %s\nvalue: %v", metric.GetService()+":"+metric.GetMetric(), common.MetricForAggr{
 			// 	Service:       metric.GetService(),

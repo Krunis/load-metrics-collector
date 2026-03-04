@@ -34,7 +34,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 				if len(batch) > 0 {
 					w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
-					log.Println("Batch sent in batchCh")
+					log.Printf("In BatchCh: %v/100 (!ok)", len(w.BatchCh))
 
 					for _, m := range batch {
 						session.MarkMessage(m, "")
@@ -48,7 +48,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 			if len(batch) >= batchSize {
 				w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
-				log.Println("Batch sent in batchCh")
+				log.Printf("In BatchCh: %v/100 (limit size)", len(w.BatchCh))
 
 				for _, m := range batch {
 					session.MarkMessage(m, "")
@@ -62,7 +62,7 @@ func (w *Worker) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 			if len(batch) > 0 {
 				w.BatchCh <- append([]*sarama.ConsumerMessage(nil), batch...)
 
-				log.Println("Batch sent in batchCh")
+				log.Printf("In BatchCh: %v/100 (timer)", len(w.BatchCh))
 
 				for _, m := range batch {
 					session.MarkMessage(m, "")
